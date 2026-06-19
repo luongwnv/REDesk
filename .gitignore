@@ -1,0 +1,47 @@
+# Build
+/build/
+/out/
+/cmake-build-*/
+*.o
+*.obj
+*.a
+*.lib
+*.so
+*.dylib
+*.dll
+*.exe
+*.app/
+*.pdb
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+CMakeUserPresets.json
+compile_commands.json
+
+# Qt
+*.qm
+*.moc
+moc_*.cpp
+qrc_*.cpp
+ui_*.h
+.qmake.stash
+
+# Third-party fetched deps
+/third_party/*/
+!/third_party/CMakeLists.txt
+!/third_party/.gitkeep
+
+# IDE
+.idea/
+*.user
+.cache/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Secrets / local config
+*.local
+.env

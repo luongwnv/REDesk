@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  REDesk LaunchDaemon template (ADR-001 §2, §3.1, §3.4).
+
+  Install to /Library/LaunchDaemons/com.redesk.service.plist
+    sudo chown root:wheel /Library/LaunchDaemons/com.redesk.service.plist
+    sudo chmod 644       /Library/LaunchDaemons/com.redesk.service.plist
+    sudo launchctl bootstrap system /Library/LaunchDaemons/com.redesk.service.plist
+    sudo launchctl enable system/com.redesk.service
+
+  IMPORTANT (ADR §3.1/§3.4 TCC traps):
+    * A LaunchDaemon has NO GUI/window-server context. ScreenCaptureKit capture
+      and CGEvent input injection CANNOT run here and will not appear in the
+      Screen Recording / Accessibility lists on macOS 26.1+.
+    * Run capture + injection from a per-USER, signed+notarized .app / LaunchAgent
+      (registered via SMAppService) approved through MDM-delivered PPPC/TCC
+      profiles. THIS daemon owns transport + coordination and brokers to that
+      user agent over the local IPC channel.
+    * SCK fails at the Login Window from a daemon — login-screen capture is a
+      research item, not a shipped feature (ADR §3.1 correction).
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.redesk.service</string>
+
+    <!-- Absolute path to the installed, signed+notarized binary. -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/local/bin/redesk-service</string>
+        <string>--run</string>
+    </array>
+
+    <!-- Start at boot and keep alive (KeepAlive restarts on crash/exit). -->
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+
+    <!-- Runs as root (privileged engine). -->
+    <key>UserName</key>
+    <string>root</string>
+
+    <key>ProcessType</key>
+    <string>Interactive</string>
+
+    <key>StandardOutPath</key>
+    <string>/var/log/redesk-service.out.log</string>
+    <key>StandardErrorPath</key>
+    <string>/var/log/redesk-service.err.log</string>
+
+    <!-- Throttle restart storms. -->
+    <key>ThrottleInterval</key>
+    <integer>10</integer>
+</dict>
+</plist>

@@ -1,0 +1,50 @@
+# REDesk systemd service template (ADR-001 §2, §3.4).
+#
+# Install (system unit, runs as root):
+#   sudo cp redesk-service.service /etc/systemd/system/redesk-service.service
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now redesk-service
+#
+# NOTE (ADR §3.4 Wayland capability ladder): portal/libei input + ScreenCast
+# capture are bound to a *graphical user session*. A root system unit can own the
+# transport/coordination engine, but capture + injection on Wayland typically
+# need a per-user instance bound to the user's graphical session:
+#   ~/.config/systemd/user/redesk-service.service + `systemctl --user enable --now`
+# Probe ConnectToEIS at runtime (never infer from compositor name/version) and
+# degrade to view-only when injection is unsupported.
+
+[Unit]
+Description=REDesk Remote Desktop Service (privileged capture/input/transport engine)
+Documentation=https://example.invalid/redesk/docs
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+# Type=notify lets the daemon signal readiness via sd_notify(READY=1) and feed
+# the watchdog (enable REDESK_SERVICE_REAL_LIFECYCLE to compile sd_notify in).
+# Until then the daemon is a plain long-running process: use Type=simple.
+Type=simple
+ExecStart=/usr/local/bin/redesk-service --run
+Restart=on-failure
+RestartSec=5
+
+# Run as root for the privileged engine. For a hardened deployment, drop to a
+# dedicated 'redesk' user/group with only the capabilities actually required and
+# bind the IPC socket to a locked-down group (see ADR §3.5).
+User=root
+Group=root
+
+# --- Hardening (tighten per deployment; some conflict with capture needs) ---
+NoNewPrivileges=true
+ProtectSystem=full
+ProtectHome=true
+PrivateTmp=true
+# RuntimeDirectory creates /run/redesk (0755 root) for the IPC socket so the
+# endpoint path itself cannot be pre-created/symlinked by an attacker.
+RuntimeDirectory=redesk
+RuntimeDirectoryMode=0755
+
+# WatchdogSec=30   # enable with Type=notify + sd_notify watchdog pings
+
+[Install]
+WantedBy=multi-user.target

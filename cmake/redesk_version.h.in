@@ -1,0 +1,12 @@
+#pragma once
+
+// Auto-generated from cmake/redesk_version.h.in — do not edit by hand.
+
+#define REDESK_VERSION_MAJOR @PROJECT_VERSION_MAJOR@
+#define REDESK_VERSION_MINOR @PROJECT_VERSION_MINOR@
+#define REDESK_VERSION_PATCH @PROJECT_VERSION_PATCH@
+#define REDESK_VERSION_STRING "@PROJECT_VERSION@"
+
+namespace redesk {
+inline constexpr const char* kVersion = REDESK_VERSION_STRING;
+}
