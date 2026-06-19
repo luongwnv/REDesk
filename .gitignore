@@ -46,3 +46,6 @@ Thumbs.db
 # Secrets / local config
 *.local
 .env
+
+# Packaging output
+/dist/

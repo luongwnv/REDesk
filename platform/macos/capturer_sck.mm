@@ -29,6 +29,7 @@
 #include "core/capture/capturer.h"
 
 #import <ScreenCaptureKit/ScreenCaptureKit.h>
+#import <CoreGraphics/CoreGraphics.h>
 #import <CoreVideo/CoreVideo.h>
 #import <CoreMedia/CoreMedia.h>
 #import <dispatch/dispatch.h>
@@ -130,6 +131,20 @@ public:
 
     redesk::Status start(const redesk::capture::CaptureConfig& cfg) override {
         if (capturing_) return redesk::Status::success();
+
+        // Gate on the Screen Recording TCC grant BEFORE touching ScreenCaptureKit.
+        // Calling SCShareableContent without the grant can hard-crash inside SCK
+        // (objc_msgSend on a torn-down internal object), which is what users hit.
+        // CGPreflight* is the safe check; CGRequest* triggers the system prompt
+        // exactly once and never crashes. (ADR §3.1 TCC handling.)
+        if (!CGPreflightScreenCaptureAccess()) {
+            CGRequestScreenCaptureAccess();  // shows the prompt; returns immediately
+            return redesk::Status::error(
+                redesk::ErrorCode::PermissionDenied,
+                "Screen Recording permission needed. Grant REDesk in System "
+                "Settings > Privacy & Security > Screen Recording, then click "
+                "Start again.");
+        }
 
         // Resolve the requested SCDisplay.
         __block SCDisplay* target = nil;
@@ -258,8 +273,11 @@ private:
         frame_cb_(frame);
     }
 
-    RedeskStreamOutput* output_ = nil;
-    SCStream* stream_ = nil;
+    // Explicit __strong so ARC retains these ObjC objects for the lifetime of
+    // this C++ object (defensive — otherwise a torn-down stream/output is a
+    // classic objc_msgSend crash).
+    __strong RedeskStreamOutput* output_ = nil;
+    __strong SCStream* stream_ = nil;
     dispatch_queue_t queue_ = nullptr;
     redesk::capture::FrameCallback frame_cb_;
     redesk::capture::CursorCallback cursor_cb_;

@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=REDesk
+GenericName=Remote Desktop
+Comment=Native cross-platform remote desktop
+Exec=REDesk
+Icon=redesk
+Terminal=false
+Categories=Network;RemoteAccess;Utility;
+Keywords=remote;desktop;screen;control;

@@ -9,14 +9,22 @@
 # portal+libei -> wlroots virtual-pointer/keyboard -> XTEST. CMake only links
 # the libraries; the ladder choice is never compile-time.
 
-target_sources(redesk_platform PRIVATE
-    "${CMAKE_CURRENT_SOURCE_DIR}/capturer_pipewire.cpp"  # PipeWire-portal + XShm
-    "${CMAKE_CURRENT_SOURCE_DIR}/encoder_vaapi.cpp"      # VAAPI / NVENC
-    "${CMAKE_CURRENT_SOURCE_DIR}/input_ladder.cpp"       # runtime capability ladder
-    "${CMAKE_CURRENT_SOURCE_DIR}/keystore_libsecret.cpp" # libsecret
-)
-
+# Like the macOS backend: the real .cpp files still carry the cross-slice
+# signature/header guesses (core/codec/encoder.h, core/input/injector.h,
+# core/crypto/keystore.h — the real core headers are codec.h/input.h/crypto.h)
+# and are not yet reconciled with core. They are built only on the real path;
+# the default stub build uses unwired_linux.cpp, which supplies the four null
+# CreateNative*() factories against the *real* core headers so it compiles on
+# GCC (which, unlike clang, requires a complete type to destroy a unique_ptr).
+# TODO(Phase 1+): reconcile the four real backends against core and re-enable.
 if(REDESK_USE_REAL_BACKENDS)
+    target_sources(redesk_platform PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/capturer_pipewire.cpp"  # PipeWire-portal + XShm
+        "${CMAKE_CURRENT_SOURCE_DIR}/encoder_vaapi.cpp"      # VAAPI / NVENC
+        "${CMAKE_CURRENT_SOURCE_DIR}/input_ladder.cpp"       # runtime capability ladder
+        "${CMAKE_CURRENT_SOURCE_DIR}/keystore_libsecret.cpp" # libsecret
+    )
+
     find_package(PkgConfig REQUIRED)
 
     # Discover deps via pkg-config; keep them PRIVATE to redesk_platform.
@@ -45,4 +53,9 @@ if(REDESK_USE_REAL_BACKENDS)
     endif()
     # NVENC on Linux is the proprietary Video Codec SDK (located via cmake/ SDK
     # locators), added here when present. VAAPI is the default open path.
+else()
+    # Default stub build: portable null factories (no PipeWire/VAAPI/etc.).
+    target_sources(redesk_platform PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/unwired_linux.cpp"
+    )
 endif()

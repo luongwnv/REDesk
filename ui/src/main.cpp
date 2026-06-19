@@ -11,6 +11,8 @@
 
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
+#include <QUrl>
+#include <QtGlobal>
 #include <QQuickWindow>
 #include <QtQml/QQmlContext>
 
@@ -38,7 +40,13 @@ int main(int argc, char* argv[]) {
         &engine, &QQmlApplicationEngine::objectCreationFailed, &app,
         []() { QCoreApplication::exit(-1); }, Qt::QueuedConnection);
 
+    // loadFromModule() needs Qt >= 6.5. On 6.4 load by resource URL; the module's
+    // resource prefix there is ":/REDesk/UI/" (vs ":/qt/qml/..." on 6.5+).
+#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
     engine.loadFromModule(QStringLiteral("REDesk.UI"), QStringLiteral("Main"));
+#else
+    engine.load(QUrl(QStringLiteral("qrc:/qt/qml/REDesk/UI/qml/Main.qml")));
+#endif
 
     return app.exec();
 }

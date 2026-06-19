@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- REDesk macOS app icon. Big Sur+ icons are a rounded "squircle" floating on a
+     transparent canvas with ~10% padding — NOT full-bleed. A full-bleed square
+     renders oversized and un-rounded next to other apps. So: transparent canvas,
+     a red rounded-rect occupying the safe area (~824/1024), "RED" centered. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" role="img" aria-label="REDesk">
+  <!-- Safe-area rounded tile (Apple icon-grid: ~100px inset, ~185px corner radius) -->
+  <rect x="100" y="100" width="824" height="824" rx="185" fill="#EF443B"/>
+  <text x="512" y="615"
+        font-family="Helvetica Neue, Helvetica, Arial, sans-serif"
+        font-size="300" font-weight="800" letter-spacing="-10"
+        text-anchor="middle" fill="#FFFFFF">RED</text>
+</svg>

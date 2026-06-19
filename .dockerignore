@@ -1,0 +1,8 @@
+# Keep the Docker build context small — exclude local build trees & artifacts.
+build/
+build-*/
+dist/
+.git/
+*.dmg
+*.app/
+.DS_Store

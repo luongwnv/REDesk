@@ -107,6 +107,13 @@ else()
     set(CPACK_DEBIAN_PACKAGE_MAINTAINER "REDesk")
     set(CPACK_DEBIAN_PACKAGE_SECTION "net")
     set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
+    # Runtime deps so `apt install ./REDesk.deb` pulls Qt + its QML plugins
+    # (the app links Qt dynamically; the QML modules are loaded at runtime and
+    # are NOT caught by shlibdeps). Names match Ubuntu 24.04.
+    set(CPACK_DEBIAN_PACKAGE_DEPENDS
+        "libqt6quick6, libqt6gui6, libqt6qml6, libqt6network6, \
+qml6-module-qtquick, qml6-module-qtquick-controls, qml6-module-qtquick-templates, \
+qml6-module-qtquick-layouts, qml6-module-qtquick-window, qml6-module-qtqml-workerscript")
 endif()
 
 include(CPack)

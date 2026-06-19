@@ -8,28 +8,38 @@
 # is not found we emit a STATUS line and return() so the *rest* of the tree still
 # configures and builds. Nothing below the guard runs without Qt.
 
-# GuiPrivate/QuickPrivate are needed for QQuickRhiItem's zero-copy present path
-# (ADR §3.5). They are separate find_package COMPONENTS, not just link targets.
-find_package(Qt6 6.8 COMPONENTS Quick Gui Core Network GuiPrivate QuickPrivate QUIET)
+# Minimum Qt is 6.4 (Ubuntu 24.04). The zero-copy VideoItem (QQuickRhiItem) needs
+# Qt >= 6.7, so it is included conditionally below; the demo uses ScreenView
+# (QQuickPaintedItem), which works on 6.4+.
+find_package(Qt6 6.4 COMPONENTS Quick Gui Core Network QUIET)
 
 if(NOT Qt6_FOUND)
     message(STATUS "REDesk UI: Qt6 (Quick/Gui/Core/Network) not found — UI target disabled.")
-    message(STATUS "           Install Qt 6.8+ and reconfigure to build redesk_ui.")
+    message(STATUS "           Install Qt 6.4+ and reconfigure to build redesk_ui.")
     return()
 endif()
 
-message(STATUS "REDesk UI: Qt6 ${Qt6_VERSION} found — building redesk_ui.")
+# QQuickRhiItem (the zero-copy present path, ADR §3.5) and its private modules
+# exist only on Qt >= 6.7. Gate VideoItem on that.
+set(REDESK_HAVE_RHI_ITEM OFF)
+if(Qt6_VERSION VERSION_GREATER_EQUAL 6.7)
+    find_package(Qt6 ${Qt6_VERSION} COMPONENTS GuiPrivate QuickPrivate QUIET)
+    if(Qt6GuiPrivate_FOUND AND Qt6QuickPrivate_FOUND)
+        set(REDESK_HAVE_RHI_ITEM ON)
+    endif()
+endif()
+
+message(STATUS "REDesk UI: Qt6 ${Qt6_VERSION} found — building redesk_ui "
+               "(zero-copy VideoItem: ${REDESK_HAVE_RHI_ITEM}).")
 
 # QML/Qt require the meta-object compiler and automatic resource handling.
-qt_standard_project_setup(REQUIRES 6.8)
+qt_standard_project_setup(REQUIRES 6.4)
 
 # ---------------------------------------------------------------------------
 # Executable + C++ sources
 # ---------------------------------------------------------------------------
 qt_add_executable(redesk_ui
     src/main.cpp
-    src/VideoItem.cpp
-    src/VideoItem.h
     src/ServiceClient.cpp
     src/ServiceClient.h
     src/SessionController.cpp
@@ -40,6 +50,12 @@ qt_add_executable(redesk_ui
     src/ScreenView.cpp
     src/ScreenView.h
 )
+
+# VideoItem only on Qt >= 6.7 (QQuickRhiItem).
+if(REDESK_HAVE_RHI_ITEM)
+    target_sources(redesk_ui PRIVATE src/VideoItem.cpp src/VideoItem.h)
+    target_compile_definitions(redesk_ui PRIVATE REDESK_HAVE_RHI_ITEM=1)
+endif()
 
 # ---------------------------------------------------------------------------
 # QML module — Main.qml is the application entry view. Components are grouped in
@@ -53,29 +69,35 @@ set_source_files_properties(qml/Theme.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
 qt_add_qml_module(redesk_ui
     URI REDesk.UI
     VERSION 1.0
+    # Place the module under Qt's default QML import root (:/qt/qml) so the engine
+    # finds REDesk.UI's qmldir without a manual addImportPath. Without this, some
+    # Qt versions emit ":/REDesk/UI/" which is NOT on the default import path and
+    # loadFromModule()/load() fail with 'no type named "Main"'.
+    RESOURCE_PREFIX "/qt/qml"
     QML_FILES
         qml/Main.qml
         qml/SessionView.qml
         qml/LocalScreenPreview.qml
         qml/Theme.qml
-        qml/components/Card.qml
-        qml/components/PrimaryButton.qml
-        qml/components/IdField.qml
-        qml/components/Pill.qml
+        qml/Card.qml
+        qml/PrimaryButton.qml
+        qml/IdField.qml
+        qml/Pill.qml
 )
 
-# QQuickRhiItem lives in the Quick module but the zero-copy present path needs
-# Qt's private GUI/Quick RHI headers (ADR §3.5: "QRhi is QPA-tier, requires
-# Qt::GuiPrivate"). These are version-pinned and isolated behind VideoItem.
 target_link_libraries(redesk_ui
     PRIVATE
         Qt6::Quick
         Qt6::Gui
         Qt6::Core
         Qt6::Network
-        Qt6::GuiPrivate
-        Qt6::QuickPrivate
 )
+
+# Private GUI/Quick RHI headers only when VideoItem (QQuickRhiItem) is built
+# (Qt >= 6.7). ADR §3.5: "QRhi is QPA-tier, requires Qt::GuiPrivate".
+if(REDESK_HAVE_RHI_ITEM)
+    target_link_libraries(redesk_ui PRIVATE Qt6::GuiPrivate Qt6::QuickPrivate)
+endif()
 
 # Link the platform-abstracted engine for shared value types (redesk::VideoFrame,
 # Status, Result, the IPC protocol enums, ...). The core slice exposes an ALIAS
@@ -115,12 +137,32 @@ set_target_properties(redesk_ui PROPERTIES
 )
 
 if(APPLE)
+    # App icon: add REDesk.icns as a bundle resource and reference it from the
+    # Info.plist via MACOSX_BUNDLE_ICON_FILE (consumed by the plist template).
+    set(_redesk_icns "${CMAKE_SOURCE_DIR}/assets/logo/REDesk.icns")
+    target_sources(redesk_ui PRIVATE "${_redesk_icns}")
+    set_source_files_properties("${_redesk_icns}" PROPERTIES
+        MACOSX_PACKAGE_LOCATION "Resources")
+
     set_target_properties(redesk_ui PROPERTIES
         MACOSX_BUNDLE_BUNDLE_NAME "REDesk"
         MACOSX_BUNDLE_GUI_IDENTIFIER "com.redesk.ui"
         MACOSX_BUNDLE_BUNDLE_VERSION "${PROJECT_VERSION}"
         MACOSX_BUNDLE_SHORT_VERSION_STRING "${PROJECT_VERSION}"
+        MACOSX_BUNDLE_ICON_FILE "REDesk.icns"
         # Info.plist carries NSScreenCaptureUsageDescription (TCC prompt, ADR §3.1).
         MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/MacOSXBundleInfo.plist.in"
     )
+
+elseif(UNIX)
+    # Linux desktop integration: install the icon (hicolor theme) + a .desktop
+    # entry so the app shows the REDesk icon in menus / docks.
+    install(FILES "${CMAKE_SOURCE_DIR}/assets/logo/redesk-icon-256.png"
+            DESTINATION share/icons/hicolor/256x256/apps
+            RENAME redesk.png COMPONENT gui)
+    install(FILES "${CMAKE_SOURCE_DIR}/assets/logo/redesk-icon-512.png"
+            DESTINATION share/icons/hicolor/512x512/apps
+            RENAME redesk.png COMPONENT gui)
+    install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/redesk.desktop"
+            DESTINATION share/applications COMPONENT gui)
 endif()

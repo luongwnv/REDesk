@@ -16,19 +16,22 @@ Item {
     // Dark backdrop behind the (possibly letterboxed) video.
     Rectangle { anchors.fill: parent; color: Theme.videoBg }
 
-    // The remote video surface. In the stub build it clears to placeholderColor;
-    // the real decode pipeline pushes native textures into it (see VideoItem.h).
-    VideoItem {
+    // The remote video surface placeholder. The real decode pipeline will present
+    // here — via VideoItem (QQuickRhiItem, zero-copy) on Qt >= 6.7, or the
+    // ScreenView (QImage) path elsewhere. Until remote streaming exists this is a
+    // plain backdrop, so SessionView builds on every supported Qt version.
+    property bool hasFrame: false
+    Rectangle {
         id: video
         anchors.fill: parent
-        placeholderColor: Theme.videoBg
+        color: Theme.videoBg
     }
 
     // "No frame yet" hint until the first decoded frame lands.
     Column {
         anchors.centerIn: parent
         spacing: Theme.spacingSm
-        visible: !video.hasFrame
+        visible: !root.hasFrame
         Text {
             anchors.horizontalCenter: parent.horizontalCenter
             text: qsTr("Waiting for remote display…")
