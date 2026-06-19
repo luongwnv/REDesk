@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- REDesk app icon — square 1:1. Solid red field (#EF443B) with "RED" in white,
+     heavy weight, stacked-tight to stay legible at small sizes (Dock / taskbar).
+     Square corners; the OS applies its own mask (macOS squircle) at install. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" role="img" aria-label="REDesk">
+  <rect width="1024" height="1024" fill="#EF443B"/>
+  <text x="512" y="640"
+        font-family="Helvetica Neue, Helvetica, Arial, sans-serif"
+        font-size="360" font-weight="800" letter-spacing="-12"
+        text-anchor="middle" fill="#FFFFFF">RED</text>
+</svg>

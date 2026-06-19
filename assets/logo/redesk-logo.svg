@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- REDesk wordmark — "RED" (white) inside a sharp red square tile + "esk" (black).
+     Reads "REDesk". Red = AnyDesk accent #EF443B (matches ui/qml/Theme.qml).
+     Square tile (no corner rounding) per request. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="560" height="180" viewBox="0 0 560 180" fill="none" role="img" aria-label="REDesk">
+  <!-- Red tile holding RED (sharp corners) -->
+  <rect x="20" y="30" width="248" height="120" fill="#EF443B"/>
+  <!-- "RED" in white, heavy, centered in the tile -->
+  <text x="144" y="121"
+        font-family="Helvetica Neue, Helvetica, Arial, sans-serif"
+        font-size="92" font-weight="800" letter-spacing="-3"
+        text-anchor="middle" fill="#FFFFFF">RED</text>
+  <!-- "esk" in black, heavy, just right of the tile -->
+  <text x="284" y="121"
+        font-family="Helvetica Neue, Helvetica, Arial, sans-serif"
+        font-size="92" font-weight="800" letter-spacing="-3"
+        text-anchor="start" fill="#111111">esk</text>
+</svg>
