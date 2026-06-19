@@ -1,9 +1,19 @@
 cmake_minimum_required(VERSION 3.21)
 
+# Objective-C++ is needed for the macOS native backends (ScreenCaptureKit,
+# VideoToolbox, CGEvent, Keychain) when REDESK_USE_REAL_BACKENDS=ON. Declaring it
+# at project() scope ensures CMAKE_OBJCXX_COMPILE_OBJECT is configured before any
+# enable_language(OBJCXX) in platform/macos.
+if(APPLE)
+    set(_REDESK_LANGS CXX OBJCXX)
+else()
+    set(_REDESK_LANGS CXX)
+endif()
+
 project(REDesk
     VERSION 0.1.0
     DESCRIPTION "Native cross-platform remote desktop (Windows/macOS/Linux), AnyDesk-class smoothness"
-    LANGUAGES CXX
+    LANGUAGES ${_REDESK_LANGS}
 )
 
 # ---------------------------------------------------------------------------
@@ -72,6 +82,10 @@ if(REDESK_BUILD_TESTS)
     enable_testing()
     add_subdirectory(tests)
 endif()
+
+# Packaging / deployment (macdeployqt / windeployqt / AppImage + CPack). No-op
+# unless the UI target was built. Must come after ui/ so redesk_ui exists.
+include(PackageDeploy)
 
 # ---------------------------------------------------------------------------
 # Configuration summary

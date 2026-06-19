@@ -8,7 +8,6 @@ import QtQuick
 import QtQuick.Controls.Basic
 import QtQuick.Layouts
 import REDesk.UI
-import REDesk.UI.components
 
 Item {
     id: root

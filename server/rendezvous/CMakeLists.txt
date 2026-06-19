@@ -29,8 +29,12 @@ target_include_directories(redesk-rendezvous PRIVATE
 )
 
 if(REDESK_USE_REAL_BACKENDS)
-    # Real Ed25519 signer. libsodium (ISC) is the single crypto core (ADR §4).
-    # Vendored/located under third_party; the find/link is centralized there.
-    # TODO(ADR §4): target_link_libraries(redesk-rendezvous PRIVATE REDesk::sodium)
+    # Real Ed25519 signer. libsodium (ISC) is the single crypto core (ADR §4),
+    # located/aliased in third_party/ as REDesk::sodium.
     target_compile_definitions(redesk-rendezvous PRIVATE REDESK_USE_REAL_BACKENDS=1)
+    if(TARGET REDesk::sodium)
+        target_link_libraries(redesk-rendezvous PRIVATE REDesk::sodium)
+    else()
+        message(WARNING "redesk-rendezvous: REDesk::sodium missing; real signer won't link.")
+    endif()
 endif()

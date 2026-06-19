@@ -10,7 +10,6 @@ import QtQuick
 import QtQuick.Controls.Basic
 import QtQuick.Layouts
 import REDesk.UI
-import REDesk.UI.components
 
 ApplicationWindow {
     id: win
@@ -39,6 +38,9 @@ ApplicationWindow {
     }
 
     Component { id: sessionViewComponent; SessionView {} }
+
+    // Local screen preview window (Phase-1 demo of the capture pipeline).
+    LocalScreenPreview { id: localPreview }
 
     // ---------------------------------------------------------------------
     // Home (control panel)
@@ -150,11 +152,21 @@ ApplicationWindow {
                         }
                         PrimaryButton {
                             Layout.fillWidth: true
-                            flat: true
+                            subtle: true
                             text: SessionController.unattendedConfigured
                                   ? qsTr("Change password…")
                                   : qsTr("Set password for unattended access")
                             onClicked: unattendedDialog.open()
+                        }
+
+                        Rectangle { Layout.fillWidth: true; height: 1; color: Theme.cardBorder }
+
+                        // Phase-1 demo: preview this machine's real screen via the
+                        // platform capturer (proves the capture pipeline works).
+                        PrimaryButton {
+                            Layout.fillWidth: true
+                            text: qsTr("Preview my screen")
+                            onClicked: localPreview.show()
                         }
 
                         Item { Layout.fillHeight: true }
